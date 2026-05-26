@@ -32,7 +32,7 @@ This repository delivers the Mastering AI Coding Agents workshop. It uses a bran
 
 These resources exist outside this repository and cannot be discovered from the code:
 
-- **The Show repository** at `https://github.com/patterson/the-show` — where pets submit pull requests for races. PRs must follow the Show's template (pet name, team, SKILL.md link).
+- **The Show repository** at `https://github.com/danielbodnar/the-show` — where pets submit pull requests for races. PRs must follow the Show's template (pet name, team, SKILL.md link).
 - **Cloudflare Durable Objects** — the race coordinator and per-team state are deployed as DOs. The bindings are `RACE_COORDINATOR` and `TEAM_STATE`. These are managed by the Show infrastructure, not this repo.
 - **Company-wide judge skill** — installed at the Patterson organization scope. Every agent in the org picks it up automatically. The judge evaluates pet submissions against the published rubric.
 - **Leaderboard** — live at the Show's leaderboard URL, updated as the judge merges pull requests. Read-only from this repo's perspective.
@@ -53,7 +53,7 @@ These resources exist outside this repository and cannot be discovered from the 
 ## Resources
 
 - [Workshop plan](references/branch-content.md) — full lesson content for each branch
-- [Patterson AI Pets rules](https://github.com/patterson/the-show)
+- [Patterson AI Pets rules](https://github.com/danielbodnar/the-show)
 - [agentskills.io specification](https://agentskills.io/specification)
 - [Claude Code documentation](https://code.claude.com/docs)
 - [skills.sh community directory](https://skills.sh)

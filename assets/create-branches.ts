@@ -31,8 +31,18 @@ You are here to learn how AI coding agents work, how to build them, and how to m
 ## Fork and clone the repository
 
 1. Navigate to the workshop repository on GitHub
-2. Click Fork to create your own copy
-3. Clone your fork to your local machine or open it in GitHub Codespaces
+2. Click **Fork** to create your own copy
+3. Clone your fork to your local machine:
+
+\`\`\`bash
+git clone https://github.com/YOUR-USERNAME/patterson-pets-lessons.git
+\`\`\`
+
+\`\`\`bash
+cd patterson-pets-lessons
+\`\`\`
+
+If you prefer GitHub Codespaces, click the green **Code** button on your fork and select **Open with Codespaces** instead.
 
 ## Bootstrap the environment
 
@@ -46,15 +56,55 @@ The bootstrap script checks for mise, installs all tool versions, runs \`just bo
 
 If any tool fails verification, raise your hand. The instructor will help troubleshoot.
 
+## Verify tool versions
+
+After bootstrap completes, confirm that each core tool is available:
+
+\`\`\`bash
+bun --version
+\`\`\`
+
+\`\`\`bash
+gh --version
+\`\`\`
+
+\`\`\`bash
+mise --version
+\`\`\`
+
+\`\`\`bash
+just --version
+\`\`\`
+
 ## Verify the three agents
 
 Open three terminal windows or tabs. In each one, launch a different agent:
 
-- Terminal 1: \`claude\` (Claude Code)
-- Terminal 2: \`opencode\` (OpenCode)
-- Terminal 3: \`gh copilot\` (GitHub Copilot CLI)
+Terminal 1:
 
-Ask each agent the same question: "What files are in this repository?" Compare the responses. Notice how each agent discovers and presents the same information differently.
+\`\`\`bash
+claude
+\`\`\`
+
+Terminal 2:
+
+\`\`\`bash
+opencode
+\`\`\`
+
+Terminal 3:
+
+\`\`\`bash
+gh copilot
+\`\`\`
+
+Ask each agent the same question:
+
+\`\`\`text
+What files are in this repository?
+\`\`\`
+
+Compare the responses. Notice how each agent discovers and presents the same information differently. Some will list files, some will describe the project structure, and some will read specific files to understand context.
 
 ## What you should have now
 
@@ -85,6 +135,30 @@ Knowing when not to use AI matters as much as knowing how to use it. The worksho
 
 The practical bottleneck in using AI well is the same one software engineers have always faced: breaking complex problems into small, modular units of work. A well-decomposed problem is one an AI agent can solve reliably. A poorly decomposed problem produces unpredictable results regardless of how good the model is.
 
+Here is an example of a poorly-decomposed prompt:
+
+\`\`\`text
+Build me a full-stack app with auth, a dashboard, and real-time notifications.
+\`\`\`
+
+The agent does not know which auth strategy you want, which dashboard layout, or which notification transport. It will guess, and its guesses will be wrong in ways that are expensive to fix.
+
+Here is the same work, decomposed into focused prompts that an agent can execute reliably:
+
+\`\`\`text
+Add a login endpoint that accepts email and password, validates against the users table, and returns a JWT with a 24-hour expiry.
+\`\`\`
+
+\`\`\`text
+Create a dashboard page that queries the /api/metrics endpoint and renders a bar chart of daily active users for the past 30 days.
+\`\`\`
+
+\`\`\`text
+Add a WebSocket endpoint at /ws/notifications that pushes new order events to connected clients.
+\`\`\`
+
+Each prompt is small enough that the agent can solve it correctly without guessing about requirements. The human does the decomposition; the agent does the implementation.
+
 Success or failure with AI coding agents hinges on how well the human decomposes the problem before handing it to the agent. This is the skill that separates effective AI users from ineffective ones, and it is the same skill that separates effective engineers from ineffective ones.
 
 ## AI in the five environments
@@ -107,7 +181,19 @@ Terminal-based agents follow the principles that have made Unix tooling effectiv
 - **DRY** — Don't repeat yourself. Terminal agents compose with existing CLI tools rather than reimplementing them. \`git\`, \`grep\`, \`curl\`, and every other command-line tool is available without integration work.
 - **Unix philosophy** — Do one thing well, compose with pipes. A skill that extracts data, piped into a skill that transforms it, piped into a skill that presents it. Each piece is testable and replaceable independently.
 
-The transparency of terminal agents is a practical advantage: you can see every command the agent runs, every file it reads, and every change it makes. When something goes wrong, the debugging surface is the shell history.
+Here is what composition looks like in practice. A terminal agent piped into standard tools:
+
+\`\`\`bash
+claude --print "list all TODO comments in src/" | grep "FIXME" | sort
+\`\`\`
+
+The transparency of terminal agents is a practical advantage: you can see every command the agent runs, every file it reads, and every change it makes. When something goes wrong, the debugging surface is the shell history:
+
+\`\`\`bash
+claude --verbose "add input validation to the signup handler"
+\`\`\`
+
+The \`--verbose\` flag shows every tool call the agent makes as it works, so you can see exactly what it reads and writes.
 
 ## What comes next
 
@@ -140,47 +226,145 @@ Learn the four primitives that make agents extensible, understand how AGENTS.md 
 
 When a terminal agent starts in a repository, it reads configuration files that tell it about the project. The most important of these is \`AGENTS.md\` (or \`CLAUDE.md\` for Claude-specific projects). This file is the agent's briefing document. Everything the agent needs to know about conventions, infrastructure, and workflows that it cannot discover from the code alone belongs here.
 
-The workshop repository's own \`AGENTS.md\` is the example. Open it now and read through it. Notice that it documents pre-existing infrastructure (the Show repository, the Cloudflare endpoints, the judge skill) that no amount of code-reading would reveal.
+The workshop repository's own \`AGENTS.md\` is the example. Open it now and read through it:
+
+\`\`\`bash
+cat AGENTS.md
+\`\`\`
+
+Notice that it documents pre-existing infrastructure (the Show repository, the Cloudflare endpoints, the judge skill) that no amount of code-reading would reveal.
 
 ## Anatomy of AGENTS.md
 
 A well-written AGENTS.md answers one question per section: what would the agent get wrong without being told this?
 
-- **Stack and tooling** — Languages, runtimes, version pins. The agent should not have to infer this from package.json.
-- **Conventions** — Naming patterns, file organization, formatting rules beyond what the linter enforces.
-- **Forbidden zones** — Files the agent must not modify. Migration files, generated code, vendored content.
-- **Pre-existing infrastructure** — Everything that exists but is not visible from the repo tree. Deployed services, environment variables, external APIs.
-- **How to work** — Workflows for testing, validating, formatting commits, opening pull requests.
+Here is the skeleton every project AGENTS.md should follow:
 
-Generic advice the agent already knows ("write clear code") fails the test and should be removed. Every line in AGENTS.md occupies context for the entire session. Treat it as the most expensive comment in the codebase.
+\`\`\`markdown
+# Project Name
+
+One-sentence description of what this repo does and the agent's role in it.
+
+## Stack and tooling
+
+- **Runtime:** Bun (TypeScript). No Node.js, no npm.
+- **Task runner:** just (justfile at repo root)
+- **Linting:** OxLint, Biome
+
+## Conventions
+
+- File naming: kebab-case for all files
+- Commit format: conventional commits (feat:, fix:, chore:)
+- Branch naming: feat/<slug>, fix/<slug>
+
+## Forbidden zones
+
+- Do not modify files in migrations/ — these are append-only
+- Do not edit generated files in dist/
+
+## Pre-existing infrastructure
+
+- Production API at https://api.example.com
+- Staging deploys to staging.example.com on every push to main
+
+## How to work
+
+- Run tests: just test
+- Lint: just lint
+- Deploy: just deploy (requires DEPLOY_TOKEN env var)
+\`\`\`
+
+Each section passes the test: would the agent get this wrong without being told? Generic advice the agent already knows ("write clear code") fails the test and should be removed. Every line in AGENTS.md occupies context for the entire session. Treat it as the most expensive comment in the codebase.
 
 ## The four primitives
 
 Agents are extended through four primitives:
 
-**Skills** are self-contained instruction sets the agent consults when relevant. A skill lives in a directory with a \`SKILL.md\` entry file and optional \`scripts/\`, \`references/\`, and \`assets/\` subdirectories. Skills trigger based on their description field: when the user's request matches what the skill describes, the agent loads and follows its instructions.
+**Skills** are self-contained instruction sets the agent consults when relevant. A skill lives in a directory with a \`SKILL.md\` entry file and optional subdirectories:
+
+\`\`\`text
+my-skill/
+├── SKILL.md              # Entry point: frontmatter + instructions
+├── scripts/              # Executable code
+│   └── validate.ts
+├── references/           # Docs loaded on demand
+│   └── api-spec.md
+└── assets/               # Templates and resources
+    └── output.md.template
+\`\`\`
+
+Skills trigger based on their description field: when the user's request matches what the skill describes, the agent loads and follows its instructions.
+
+The \`SKILL.md\` frontmatter looks like this:
+
+\`\`\`yaml
+---
+name: my-skill
+description: >
+  Deploy the application to production. Use this skill when the user
+  asks to deploy, ship, push to prod, or release a new version.
+metadata:
+  author: Your Name
+  version: 1.0.0
+---
+\`\`\`
 
 **Commands** are user-invoked shortcuts. In Claude Code, a file at \`.claude/commands/deploy.md\` creates a \`/deploy\` command the user can type. Commands and skills have been merged in Claude Code: a skill at \`.claude/skills/deploy/SKILL.md\` also creates a \`/deploy\` invocation. The distinction matters in other agents.
 
 **Sub-agents** are specialized workers the agent dispatches for focused tasks. The parent agent coordinates; the sub-agent executes. Sub-agents are useful for parallelizing independent work or for isolating a task that requires a different set of tools.
 
-**Rules** are constraints the agent must follow. Rules live in \`.claude/rules/*.md\` and can be scoped to specific file patterns using \`paths:\` frontmatter. Rules are always in context, so they should be short and specific.
+**Rules** are constraints the agent must follow. Rules live in \`.claude/rules/*.md\` and can be scoped to specific file patterns. Here is an example rule:
+
+\`\`\`markdown
+---
+paths:
+  - "migrations/**"
+---
+
+# No migration edits
+
+Never modify existing migration files. Migrations are append-only.
+To change the schema, create a new migration file.
+\`\`\`
+
+Rules are always in context, so they should be short and specific.
 
 ## MCP servers
 
 MCP (Model Context Protocol) servers extend the agent's available tools. An MCP server is a process that exposes tools, resources, and prompts over a standard protocol. When an agent connects to an MCP server, the server's tools appear alongside the agent's built-in tools.
 
-The configuration lives in \`.mcp.json\` at the repository root. The workshop does not go deeper into MCP server development, but knowing that the mechanism exists is important because several of the pre-provisioned services (Cloudflare Docs, Context7) are available as MCP servers.
+The configuration lives in \`.mcp.json\` at the repository root:
+
+\`\`\`json
+{
+  "mcpServers": {
+    "cloudflare-docs": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-cloudflare-docs"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-context7"]
+    }
+  }
+}
+\`\`\`
+
+The workshop does not go deeper into MCP server development, but knowing that the mechanism exists is important because several of the pre-provisioned services (Cloudflare Docs, Context7) are available as MCP servers.
 
 ## Hands-on: Install a skill
 
 Install a skill from the community directory:
 
 \`\`\`bash
-npx skills add <skill-name>
+npx skills add code-review
 \`\`\`
 
-Confirm the company-wide judge skill is present in the workshop environment. The judge was installed at the organization scope, so it appears automatically without per-team configuration.
+Confirm the company-wide judge skill is present in the workshop environment. The judge was installed at the organization scope, so it appears automatically without per-team configuration. Verify it by listing installed skills:
+
+\`\`\`bash
+claude /skills
+\`\`\`
 
 Trigger the installed skill to confirm it activates. Ask your agent a question that falls within the skill's description, and verify that the agent consults the skill in its response.
 
@@ -218,7 +402,7 @@ bunx patterson-skill-creator init my-pet-name
 
 This creates a directory with the standard structure:
 
-\`\`\`
+\`\`\`text
 my-pet-name/
 ├── SKILL.md              # The pet: name, description, instructions
 ├── AGENTS.md             # Conventions for working on this pet
@@ -233,13 +417,103 @@ my-pet-name/
 
 ## Write the SKILL.md
 
-The SKILL.md frontmatter must include:
+The SKILL.md frontmatter must include \`name\` and \`description\`. Here is a complete example for a pet:
 
-- \`name\` — The pet's name in kebab-case. Must match the directory name.
-- \`description\` — What the pet does and when the judge should consider it. This is the primary triggering mechanism. Write it specifically and slightly pushy.
-- \`metadata\` — Optional fields for team name, breed, and lore tags.
+\`\`\`yaml
+---
+name: thunderpaw
+description: >
+  Thunderpaw is a competitive coding pet that solves challenges with a
+  test-driven, minimal approach. Use Thunderpaw when evaluating coding
+  challenge submissions, reviewing pull requests for the Patterson AI Pets
+  Show, or when the user mentions Thunderpaw by name. Thunderpaw prioritizes
+  correctness over cleverness and writes the simplest solution that passes
+  all tests.
+metadata:
+  author: Team Lightning
+  version: 1.0.0
+  breed: Border Collie
+  team: Lightning Bolts
+---
+
+# Thunderpaw
+
+## Strategy
+
+Thunderpaw approaches every challenge with three steps:
+
+1. Read the challenge specification completely before writing any code
+2. Write failing tests that cover the requirements and edge cases
+3. Implement the simplest solution that makes all tests pass
+
+## Engineering standards
+
+- Every function has a test
+- No dead code, no commented-out code
+- Error handling at system boundaries only
+- Conventional commits on every change
+
+## What Thunderpaw refuses to do
+
+- Over-engineer: no abstractions beyond what the challenge requires
+- Skip tests: red-green-refactor is non-negotiable
+- Ignore the rubric: every decision maps to a scoring criterion
+\`\`\`
 
 The body contains the pet's instructions for solving challenges. Focus on the pet's strategy: what kinds of problems it approaches, how it decomposes work, what engineering standards it enforces, and what it refuses to do. A focused, well-described pet outperforms a verbose one because the judge reads the SKILL.md under a context budget.
+
+## Write a verification script
+
+Add a verification script at \`scripts/verify.ts\` that checks the pet's structure:
+
+\`\`\`typescript
+#!/usr/bin/env bun
+
+import { existsSync } from "node:fs";
+
+const required = ["SKILL.md", "AGENTS.md", "README.md"];
+const optional = ["references/approach.md", "assets/lore.md", "scripts/verify.ts"];
+
+let passed = 0;
+let failed = 0;
+
+for (const file of required) {
+  if (existsSync(file)) {
+    console.log(\`[pass] \${file}\`);
+    passed++;
+  } else {
+    console.error(\`[fail] \${file} is missing (required)\`);
+    failed++;
+  }
+}
+
+for (const file of optional) {
+  if (existsSync(file)) {
+    console.log(\`[pass] \${file}\`);
+    passed++;
+  } else {
+    console.log(\`[skip] \${file} (optional)\`);
+  }
+}
+
+const skillContent = await Bun.file("SKILL.md").text();
+if (!skillContent.startsWith("---")) {
+  console.error("[fail] SKILL.md is missing YAML frontmatter");
+  failed++;
+} else {
+  console.log("[pass] SKILL.md has frontmatter");
+  passed++;
+}
+
+console.log(\`\\nResults: \${passed} passed, \${failed} failed\`);
+process.exit(failed > 0 ? 1 : 0);
+\`\`\`
+
+Run it to check your pet:
+
+\`\`\`bash
+bun run scripts/verify.ts
+\`\`\`
 
 ## The hierarchical skill structure
 
@@ -254,6 +528,14 @@ The hierarchy means that the judge (company-wide) automatically governs every pe
 ## Push, test, and submit
 
 Push your pet repository to GitHub:
+
+\`\`\`bash
+git add -A
+\`\`\`
+
+\`\`\`bash
+git commit -m "feat: initial pet scaffold"
+\`\`\`
 
 \`\`\`bash
 git push origin main
@@ -279,9 +561,57 @@ This opens a pull request against the Show repository. The judge will review it 
 
 Once a pet runs autonomously in CI, guardrails are not optional. Three mechanisms:
 
-- **Allow lists** — Explicitly enumerate the tools and file patterns the pet may use. Everything else is denied.
-- **Deny lists** — Explicitly block dangerous operations: force pushes, secret access, network calls to unexpected endpoints.
-- **Pre-tool-use hooks** — Code that runs before the agent executes a tool call. The hook can inspect the call and reject it before damage is done.
+**Allow lists** explicitly enumerate what the pet may do. Configure them in \`.claude/settings.json\`:
+
+\`\`\`json
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash(bun test)",
+      "Bash(bun run lint)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
+\`\`\`
+
+**Deny lists** explicitly block dangerous operations:
+
+\`\`\`json
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(rm -rf *)",
+      "Bash(curl *)"
+    ]
+  }
+}
+\`\`\`
+
+**Pre-tool-use hooks** run code before the agent executes a tool call. The hook can inspect the call and reject it before damage is done. Configure hooks in \`.claude/settings.json\`:
+
+\`\`\`json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/check-command.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+\`\`\`
 
 The judge enforces a baseline set of guardrails on every submission. Teams can add stricter guardrails to their own pets.
 
@@ -309,6 +639,44 @@ See the full lifecycle in action: the agent you built locally runs in CI, the ju
 
 The agent you used locally during the workshop is the same agent that runs in CI when your pet's pull request lands in the Show repository. The code is identical. The skill is identical. The only difference is the trigger: locally, you typed a command; in CI, a GitHub Actions workflow fires when a pull request event occurs.
 
+Here is what a pet's CI workflow looks like:
+
+\`\`\`yaml
+name: Pet Race
+
+on:
+  repository_dispatch:
+    types: [new-challenge]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  race:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: Run pet agent
+        env:
+          ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude --print "Read the challenge in CHALLENGE.md and solve it following the instructions in SKILL.md. Commit your solution and open a pull request."
+
+      - name: Submit to The Show
+        run: |
+          gh pr create --title "Race submission: \${{ github.repository }}" --body "Automated submission from pet CI"
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+\`\`\`
+
 This is the point of the terminal-agent model. There is no separate "CI version" of the agent. The same instructions, the same tools, the same constraints. If it works on your machine, it works in CI. If it fails in CI, you can reproduce it on your machine.
 
 ## The judge agent
@@ -325,6 +693,30 @@ The judge:
 6. Factors in token efficiency: smaller, more focused agents score higher
 7. Merges or rejects the pull request based on the combined score
 
+Here is what a judge review comment looks like on a pull request:
+
+\`\`\`text
+## Judge Review: thunderpaw
+
+### Scores
+
+| Criterion          | Score | Max | Notes                              |
+|--------------------|-------|-----|------------------------------------|
+| Correctness        | 25    | 30  | All tests pass, one edge case missed |
+| Simplicity         | 18    | 20  | Clean solution, no over-engineering  |
+| Clarity            | 15    | 15  | Well-named functions, clear flow     |
+| Engineering hygiene | 12   | 15  | Missing error handling at API boundary |
+| Token efficiency   | 16    | 20  | 12k tokens used (budget: 10k)       |
+
+### Total: 86 / 100
+
+**Decision: MERGE**
+
+The submission meets the threshold. Correctness is strong. The token budget
+was slightly exceeded — consider tightening the SKILL.md instructions to
+reduce unnecessary exploration.
+\`\`\`
+
 The scoring creates a real tradeoff between capability and economy. A pet that solves the challenge perfectly but burns excessive tokens scores lower than a focused pet that solves it cleanly. This mirrors the actual constraints of using AI agents in production.
 
 ## Race day
@@ -339,18 +731,46 @@ All registered pets receive the workshop's first challenge simultaneously. The s
 
 You watch but do not intervene. The hands-off character is deliberate: it mirrors production use of autonomous agents, where preparation is the work and the run is the evaluation.
 
+Check the leaderboard status during the race:
+
+\`\`\`bash
+gh api repos/danielbodnar/the-show/contents/LEADERBOARD.md --jq '.content' | base64 -d
+\`\`\`
+
+Or view it directly in the browser:
+
+\`\`\`bash
+gh browse danielbodnar/the-show -- blob/main/LEADERBOARD.md
+\`\`\`
+
 If time permits, review another team's pet repository to see how a different approach scored. Cross-team learning is one of the game's design goals.
 
 ## Beyond the race: CI/CD patterns
 
 The same primitive that powers the race supports other CI/CD workflows:
 
-- **Issue triage** — A skill that reads new issues, categorizes them, and assigns labels or team members
-- **Dependency updates** — A skill that monitors for outdated packages and opens upgrade pull requests
-- **Scheduled maintenance** — A skill that runs periodic checks (security scans, license audits) and files issues for findings
-- **Code review** — The judge itself, repurposed as a general-purpose review agent for production pull requests
+**Issue triage** — a skill that categorizes new issues:
 
-Each of these is a skill. Each can be installed at the company, personal, or project level. Each runs the same in CI as it does locally.
+\`\`\`yaml
+name: Triage Issues
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          claude --print "Read issue #\${{ github.event.issue.number }}. Assign a priority label (p0-critical, p1-high, p2-medium, p3-low) and a category label based on the content."
+        env:
+          ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+\`\`\`
+
+Each of these patterns is a skill. Each can be installed at the company, personal, or project level. Each runs the same in CI as it does locally.
 
 ## What to take home
 

@@ -85,7 +85,7 @@ just submit       # Push pet and open PR to The Show
 
 ## Resources
 
-- [Patterson AI Pets rules](https://github.com/patterson/the-show)
+- [Patterson AI Pets rules](https://github.com/danielbodnar/the-show)
 - [agentskills.io specification](https://agentskills.io/specification)
 - [Claude Code documentation](https://code.claude.com/docs)
 - [skills.sh community directory](https://skills.sh)
