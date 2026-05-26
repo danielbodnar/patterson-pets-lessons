@@ -128,26 +128,19 @@ jobs:
   const gitDir = join(target, ".git");
   if (existsSync(gitDir)) {
     console.log("\nCommitting base state on main...");
-    const cwd = process.cwd();
-    process.chdir(target);
 
-    await $`git add -A`.quiet();
-    const status = await $`git status --porcelain`.quiet();
+    await $`git add -A`.cwd(target).quiet();
+    const status = await $`git status --porcelain`.cwd(target).quiet();
     if (status.text().trim() !== "") {
-      await $`git commit -m ${"chore: scaffold workshop repository base"}`.quiet();
+      await $`git commit -m ${"chore: scaffold workshop repository base"}`.cwd(target).quiet();
       console.log("Base state committed on main.");
     } else {
       console.log("Nothing to commit (base state already present).");
     }
-
-    process.chdir(cwd);
   }
 
   console.log("\nRunning branch creation script...");
-  const cwd = process.cwd();
-  process.chdir(target);
-  await $`bun run scripts/create-branches.ts`;
-  process.chdir(cwd);
+  await $`bun run scripts/create-branches.ts`.cwd(target);
 
   console.log("\nScaffold complete!");
   console.log(`Repository at: ${target}`);

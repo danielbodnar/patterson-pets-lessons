@@ -1,0 +1,88 @@
+# Maintainer Handoff
+
+This document captures the design decisions behind the workshop repository structure for whoever inherits maintenance after the initial event.
+
+## Why branches instead of directories
+
+The workshop uses a branch-per-lesson structure rather than a single branch with all content in directories. The reason is the drop-in/drop-out constraint: attendees may arrive late, fall behind, or need to skip ahead. With branches, checking out a specific lesson gives a complete, working state through that point. With directories, the participant would need to manually reconstruct prior state or ignore incomplete files.
+
+The tradeoff is maintenance cost. Updating an early lesson requires propagating changes to all downstream branches (rebase or cherry-pick). This is manageable for a five-chapter workshop and becomes painful at scale. If the workshop grows beyond eight or ten chapters, reconsider the structure.
+
+## Branch dependency chain
+
+The branches form a strict linear chain:
+
+```
+main → lessons/00-setup → lessons/01-intro → lessons/02-getting-started → lessons/03-going-deeper → lessons/04-tying-it-together
+```
+
+Each branch is created from its parent's tip. There are no parallel branches or merge points. This linearity is deliberate: it guarantees that checking out any branch includes all prior content without conflict.
+
+## Lesson mapping
+
+| Branch | Workshop section | Dependencies |
+|---|---|---|
+| `main` | — | None. Contains infrastructure only. |
+| `lessons/00-setup` | Opening | Requires `main` (bootstrap, AGENTS.md, dev env) |
+| `lessons/01-intro` | Chapter 1: Intro to AI Agents | Requires verified environment from 00-setup |
+| `lessons/02-getting-started` | Chapter 2: Getting Started | Requires conceptual ground from 01-intro |
+| `lessons/03-going-deeper` | Chapter 3: Going Deeper | Requires primitives knowledge from 02-getting-started |
+| `lessons/04-tying-it-together` | Chapter 4: Tying It All Together | Requires pet submission from 03-going-deeper |
+
+## How to add a new lesson
+
+1. Check out the last lesson branch: `git checkout lessons/04-tying-it-together`
+2. Create a new branch: `git checkout -b lessons/05-new-slug`
+3. Add lesson content to `lessons/05-new-slug/LESSON.md`
+4. Commit and push
+5. Update `scripts/create-branches.ts` to include the new branch in the ordered list
+6. Update `references/branch-content.md` with the new lesson content
+7. Update the README branch table
+
+## How to update an existing lesson
+
+Updating an early lesson is a cascade operation. Changes to `lessons/01-intro` must propagate to `lessons/02-getting-started` through `lessons/04-tying-it-together`.
+
+Recommended approach:
+
+1. Check out the lesson branch you want to modify
+2. Make changes and commit
+3. For each downstream branch in order, rebase onto the updated parent:
+   ```bash
+   git checkout lessons/02-getting-started
+   git rebase lessons/01-intro
+   ```
+4. Resolve any conflicts at each step
+5. Force-push all affected branches (this is the one case where force-push is appropriate)
+
+Test the full chain after rebasing by checking out the final branch and verifying that all lesson content is present and consistent.
+
+## Conventions
+
+**Branch naming:** `lessons/NN-slug` where NN is a zero-padded two-digit number and slug is a short kebab-case description. The number determines the ordering; the slug provides human readability.
+
+**Lesson content:** Each lesson's content lives in `lessons/NN-slug/LESSON.md`. The file uses Markdown with H3 and H4 headers for sections. Each LESSON.md starts with an Objectives section and ends with a "What you should have now" section.
+
+**Commit messages:** Use conventional commits. The branch creation script uses `lesson(NN): add <chapter-name>` as the commit message format.
+
+**File naming:** kebab-case for all files and directories. The `SKILL.md`, `AGENTS.md`, `README.md`, `HANDOFF.md`, and `LESSON.md` files are the exceptions (uppercase by convention).
+
+## Relationship to other artifacts
+
+**Dev environment (prompt 06):** The `mise.toml`, `justfile`, `devcontainer.json`, and `Dockerfile` are produced by the `patterson-dev-environment` skill. They do not exist in this repo yet. The bootstrap script invokes this environment but does not reimplement it. Changes to the dev environment should be made in the dev environment skill and then regenerated here. Until the dev environment skill has been run, `bootstrap.sh` will fail at `mise install` because there is no `.mise.toml`.
+
+**AGENTS.md (prompt 04):** The `AGENTS.md` at the repo root follows the conventions from prompt 04. It documents infrastructure the agent cannot discover from the code. Changes to pre-existing infrastructure (new Cloudflare endpoints, new judge capabilities) must be reflected here.
+
+**The Show repository:** The workshop repo is a feeder for The Show. Pets built during the workshop submit pull requests to the Show repository. The Show repo has its own conventions for PR format and review workflow. These are documented in the workshop's AGENTS.md under the pre-existing infrastructure section.
+
+## Skill infrastructure
+
+This repo also contains the `workshop-repo-scaffold` skill (SKILL.md, scripts/scaffold.ts, assets/, references/). These files are maintainer-facing. Participants can ignore them. The scaffold can be re-run to generate a fresh workshop repo elsewhere via `bun run scripts/scaffold.ts --target ./path`.
+
+## Scripts
+
+**`scripts/create-branches.ts`** — Idempotent branch creation. Safe to re-run. Checks for existing branches before creating new ones. Refuses to run on a dirty working tree. Never force-pushes or deletes branches.
+
+**`scripts/scaffold.ts`** — Full repo scaffolding. Creates a new directory, copies templates, commits base state, and runs branch creation. Maintainer tool for spinning up fresh workshop instances.
+
+**`bootstrap.sh`** — Participant-facing entry point. Thin wrapper that checks for mise, installs tools, and verifies the environment. Requires prompt 06 dev environment files to be present.
