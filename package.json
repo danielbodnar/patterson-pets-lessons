@@ -1,0 +1,13 @@
+{
+  "name": "workshop-repo-scaffold",
+  "version": "1.0.0",
+  "description": "Patterson AI Pets workshop repo scaffold skill — generates a branch-per-lesson structure",
+  "type": "module",
+  "scripts": {
+    "scaffold": "bun run scripts/scaffold.ts",
+    "create-branches": "bun run assets/create-branches.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

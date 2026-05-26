@@ -1,0 +1,59 @@
+# Patterson AI Pets Workshop
+
+This repository delivers the Mastering AI Coding Agents workshop. It uses a branch-per-lesson structure where each branch contains the completed state through that chapter. The agent's job here is to help maintain the workshop content, update lesson materials, manage the branch structure, and assist participants during the session.
+
+## Stack and tooling
+
+- **Runtime:** Bun (TypeScript). No Node.js, no npm, no yarn.
+- **Task runner:** just (justfile at repo root)
+- **Version manager:** mise (.mise.toml at repo root)
+- **Linting:** OxLint, Biome
+- **Container:** devcontainer.json for Codespaces and VS Code Dev Containers, Dockerfile for self-host
+- **Coding agents:** Claude Code, OpenCode, GitHub Copilot CLI (all three installed and available simultaneously)
+
+## Conventions
+
+**Branch naming:** `lessons/NN-slug` (e.g., `lessons/02-getting-started`). Branches are linearly chained: each inherits from the previous. Never create a lesson branch from `main` directly unless it is the first lesson.
+
+**Lesson content:** Each lesson has a `lessons/NN-slug/LESSON.md` file with Objectives at the top and "What you should have now" at the bottom.
+
+**Commit format:** Conventional commits. Branch creation commits use `lesson(NN): add <chapter-name>`.
+
+**File naming:** kebab-case everywhere except `SKILL.md`, `AGENTS.md`, `README.md`, `HANDOFF.md`, `LESSON.md`.
+
+## Forbidden zones
+
+- Do not modify lesson branches without understanding the downstream cascade. Changes to `lessons/01-intro` require rebasing `lessons/02-getting-started` through `lessons/04-tying-it-together`.
+- Do not delete any lesson branch. The branch structure is the delivery mechanism.
+- Do not modify `bootstrap.sh` beyond its role as a thin wrapper for `mise install` and `just bootstrap`.
+- Do not commit secrets, API keys, or tokens. The `.dev.vars` and `.env` files are gitignored.
+
+## Pre-existing infrastructure
+
+These resources exist outside this repository and cannot be discovered from the code:
+
+- **The Show repository** at `https://github.com/patterson/the-show` — where pets submit pull requests for races. PRs must follow the Show's template (pet name, team, SKILL.md link).
+- **Cloudflare Durable Objects** — the race coordinator and per-team state are deployed as DOs. The bindings are `RACE_COORDINATOR` and `TEAM_STATE`. These are managed by the Show infrastructure, not this repo.
+- **Company-wide judge skill** — installed at the Patterson organization scope. Every agent in the org picks it up automatically. The judge evaluates pet submissions against the published rubric.
+- **Leaderboard** — live at the Show's leaderboard URL, updated as the judge merges pull requests. Read-only from this repo's perspective.
+- **MCP servers available in the environment:** Cloudflare Docs (current CF documentation), Context7 (package version and API lookup), Nushell (Nu scripting reference).
+
+## How to work in this repository
+
+**Maintain lesson content:** Edit the `LESSON.md` on the appropriate branch. Propagate to downstream branches via rebase. See `HANDOFF.md` for the full procedure.
+
+**Regenerate branches:** Run `bun run scripts/create-branches.ts` from the repo root. The script is idempotent and skips existing branches.
+
+**Test the environment:** Run `just verify` to check that all tools are available. Run `just test` to run the test suite.
+
+**Validate skill structure:** Run `bunx patterson-skill-creator validate .` to check SKILL.md frontmatter and directory structure.
+
+**During the workshop session:** Help participants fork the repo, run the bootstrap, and troubleshoot environment issues. Point them at the appropriate lesson branch if they fall behind.
+
+## Resources
+
+- [Workshop plan](references/branch-content.md) — full lesson content for each branch
+- [Patterson AI Pets rules](https://github.com/patterson/the-show)
+- [agentskills.io specification](https://agentskills.io/specification)
+- [Claude Code documentation](https://code.claude.com/docs)
+- [skills.sh community directory](https://skills.sh)

@@ -1,0 +1,64 @@
+#!/bin/sh
+set -eu
+
+# Patterson AI Pets Workshop — Bootstrap Script
+# This is the single entry point participants run during the Setup slide.
+# It checks for mise, installs tool versions, and verifies the environment.
+
+BOLD="\033[1m"
+GREEN="\033[32m"
+RED="\033[31m"
+RESET="\033[0m"
+
+printf "%b\n" "${BOLD}Patterson AI Pets Workshop — Environment Bootstrap${RESET}"
+printf "%s\n" "=================================================="
+echo ""
+
+# Step 1: Check for mise
+if ! command -v mise >/dev/null 2>&1; then
+    printf "%b\n" "${RED}mise is not installed.${RESET}"
+    echo ""
+    echo "Install mise first:"
+    echo "  curl https://mise.run | sh"
+    echo ""
+    echo "Then add mise to your shell profile and restart your terminal."
+    echo "See https://mise.jdx.dev/getting-started.html for details."
+    exit 1
+fi
+
+printf "%b\n" "${GREEN}[ok]${RESET} mise found: $(mise --version)"
+
+# Step 2: Install tool versions from .mise.toml
+echo ""
+echo "Installing tool versions..."
+mise install
+
+# Step 3: Run just bootstrap (installs deps and verifies environment)
+if ! command -v just >/dev/null 2>&1; then
+    printf "%b\n" "${RED}just is not available after mise install.${RESET}"
+    echo "Check that .mise.toml includes just and try again."
+    exit 1
+fi
+
+echo ""
+echo "Running just bootstrap..."
+just bootstrap
+
+echo ""
+printf "%b\n" "${BOLD}Bootstrap complete.${RESET}"
+echo ""
+echo "You now have:"
+echo "  - bun         TypeScript runtime and package manager"
+echo "  - gh          GitHub CLI"
+echo "  - mise        Tool version manager"
+echo "  - just        Task runner (type 'just' to see commands)"
+echo "  - claude      Claude Code"
+echo "  - opencode    OpenCode"
+echo "  - gh copilot  GitHub Copilot CLI"
+echo ""
+echo "Open three terminals and try each agent:"
+echo "  Terminal 1:  claude"
+echo "  Terminal 2:  opencode"
+echo "  Terminal 3:  gh copilot"
+echo ""
+echo "Ask each one: \"What files are in this repository?\""
